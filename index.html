@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>AI Thời tiết</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #74ebd5, #ACB6E5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      padding: 1rem; /* Thêm padding để tránh container chạm viền trên mobile */
+    }
+    .container {
+      background-color: white;
+      padding: 2rem;
+      border-radius: 16px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+    h2 {
+      margin-top: 0; /* Bỏ margin top mặc định của h2 */
+      margin-bottom: 1.5rem; /* Tăng khoảng cách dưới h2 */
+      color: #333;
+    }
+    input[type="text"] { /* Cụ thể hơn cho input text */
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      font-size: 1rem;
+      transition: border-color 0.3s, box-shadow 0.3s; /* Thêm transition cho box-shadow */
+    }
+    input[type="text"]:focus {
+      border-color: #0077ff;
+      box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25); /* Thêm hiệu ứng focus */
+      outline: none;
+    }
+    button {
+      padding: 0.75rem 1.5rem;
+      background-color: #0077ff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background-color 0.3s; /* Sửa lại transition property */
+    }
+    button:hover {
+      background-color: #005fcc;
+    }
+    button:disabled { /* Style cho nút khi bị vô hiệu hóa */
+        background-color: #cccccc;
+        cursor: not-allowed;
+    }
+    #response {
+      margin-top: 1.5rem; /* Tăng khoảng cách trên response */
+      font-size: 1.05rem; /* Điều chỉnh font size */
+      color: #444;
+      min-height: 2em; /* Đảm bảo có không gian cho text, tránh nhảy layout */
+      line-height: 1.6; /* Cải thiện khả năng đọc */
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>🌤️ AI Tra Cứu Thời Tiết</h2>
+    <input type="text" id="questionInput" placeholder="Hỏi thời tiết (ví dụ: Hà Nội) ...">
+    <button onclick="askWeather()">Xem thời tiết</button>
+    <p id="response"></p>
+  </div>
+
+  <script>
+    const questionInputElement = document.getElementById("questionInput");
+    const responseElement = document.getElementById("response");
+    const submitButton = document.querySelector("button");
+
+    async function askWeather() {
+      const question = questionInputElement.value.trim();
+
+      if (!question) {
+        responseElement.innerText = "Vui lòng nhập tên thành phố hoặc câu hỏi về thời tiết.";
+        return;
+      }
+
+      // Trạng thái chờ
+      responseElement.innerText = "Đang tìm kiếm thông tin...";
+      submitButton.disabled = true;
+      questionInputElement.disabled = true;
+
+      try {
+        const encodedQuestion = encodeURIComponent(question);
+        const res = await fetch(`http://localhost:8000/ask?question=${encodedQuestion}`);
+        
+        // Không cần kiểm tra res.ok ở đây vì backend sẽ luôn trả về JSON
+        // (trừ trường hợp server FastAPI bị sập hoàn toàn hoặc lỗi CORS nghiêm trọng)
+        const data = await res.json();
+
+        if (data && data.message) {
+            responseElement.innerText = data.message;
+        } else {
+            // Trường hợp backend trả về cấu trúc không mong đợi
+            responseElement.innerText = "Đã có lỗi xảy ra. Phản hồi không hợp lệ từ máy chủ.";
+        }
+
+      } catch (error) {
+        console.error("Lỗi khi gọi API:", error);
+        responseElement.innerText = "Không thể kết nối đến máy chủ hoặc đã có lỗi xảy ra. Vui lòng thử lại.";
+      } finally {
+        // Khôi phục trạng thái
+        submitButton.disabled = false;
+        questionInputElement.disabled = false;
+      }
+    }
+
+    // Cho phép nhấn Enter để gửi
+    questionInputElement.addEventListener("keypress", function(event) {
+        if (event.key === "Enter") {
+            event.preventDefault(); // Ngăn hành vi mặc định của Enter (nếu có form)
+            askWeather();
+        }
+    });
+  </script>
+</body>
+</html>
