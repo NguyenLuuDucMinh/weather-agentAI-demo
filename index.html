@@ -2,8 +2,9 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>AI Thời tiết</title>
+  <title>AI Thời tiết & Du lịch</title>
   <style>
+    /* ... ( toàn bộ CSS từ lần trước giữ nguyên ) ... */
     * {
       box-sizing: border-box;
     }
@@ -12,10 +13,10 @@
       background: linear-gradient(to right, #74ebd5, #ACB6E5);
       display: flex;
       justify-content: center;
-      align-items: center;
-      height: 100vh;
+      align-items: flex-start; 
+      min-height: 100vh;
       margin: 0;
-      padding: 1rem; /* Thêm padding để tránh container chạm viền trên mobile */
+      padding: 2rem;
     }
     .container {
       background-color: white;
@@ -23,26 +24,41 @@
       border-radius: 16px;
       box-shadow: 0 8px 20px rgba(0,0,0,0.2);
       width: 100%;
-      max-width: 400px;
-      text-align: center;
+      max-width: 900px; 
+      display: flex;
+      gap: 2rem; 
     }
+
+    .input-column {
+      flex: 1; 
+      display: flex;
+      flex-direction: column;
+    }
+
+    .output-column {
+      flex: 1.5; 
+      display: flex; 
+      flex-direction: column;
+    }
+
     h2 {
-      margin-top: 0; /* Bỏ margin top mặc định của h2 */
-      margin-bottom: 1.5rem; /* Tăng khoảng cách dưới h2 */
+      margin-top: 0;
+      margin-bottom: 1.5rem;
       color: #333;
+      text-align: center; 
     }
-    input[type="text"] { /* Cụ thể hơn cho input text */
+    input[type="text"] {
       width: 100%;
       padding: 0.75rem;
       border: 1px solid #ccc;
       border-radius: 8px;
       margin-bottom: 1rem;
       font-size: 1rem;
-      transition: border-color 0.3s, box-shadow 0.3s; /* Thêm transition cho box-shadow */
+      transition: border-color 0.3s, box-shadow 0.3s;
     }
     input[type="text"]:focus {
       border-color: #0077ff;
-      box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25); /* Thêm hiệu ứng focus */
+      box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
       outline: none;
     }
     button {
@@ -53,80 +69,254 @@
       border-radius: 8px;
       font-size: 1rem;
       cursor: pointer;
-      transition: background-color 0.3s; /* Sửa lại transition property */
+      transition: background-color 0.3s;
+      width: 100%; 
     }
     button:hover {
       background-color: #005fcc;
     }
-    button:disabled { /* Style cho nút khi bị vô hiệu hóa */
+    button:disabled {
         background-color: #cccccc;
         cursor: not-allowed;
     }
+
     #response {
-      margin-top: 1.5rem; /* Tăng khoảng cách trên response */
-      font-size: 1.05rem; /* Điều chỉnh font size */
-      color: #444;
-      min-height: 2em; /* Đảm bảo có không gian cho text, tránh nhảy layout */
-      line-height: 1.6; /* Cải thiện khả năng đọc */
+      background-color: #f8f9fa;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      font-size: 0.95rem;
+      color: #343a40;
+      line-height: 1.65;
+      text-align: left;
+      opacity: 0;
+      transform: translateY(15px);
+      transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+      width: 100%; 
+      min-height: 200px; 
+      overflow-y: auto; 
+    }
+
+    #response.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    #response.error {
+      color: #721c24;
+      background-color: #f8d7da;
+      border-color: #f5c6cb;
+    }
+
+    #response.loading {
+      color: #004085;
+      background-color: #cce5ff;
+      border-color: #b8daff;
+      font-style: italic;
+      text-align: center; 
+    }
+
+    #response ul {
+      list-style-type: none; 
+      padding-left: 0; 
+      margin-top: 0.75rem; 
+    }
+
+    #response li {
+      margin-bottom: 0.5rem; 
+    }
+
+    #response a { /* Style chung cho các link trong response */
+      color: #0056b3; 
+      text-decoration: none; 
+      padding: 0.2rem 0.4rem; /* Giảm padding một chút cho link thường */
+      border-radius: 4px; 
+      transition: background-color 0.2s, color 0.2s, text-decoration 0.2s;
+    }
+     #response a:hover, #response a:focus {
+      text-decoration: underline; /* Thêm gạch chân khi hover link thường */
+    }
+
+
+    /* Style riêng cho link chỉ đường / tìm địa điểm cụ thể */
+    #response a.map-navigation-link {
+      background-color: #007bff; /* Màu nền giống nút */
+      color: white;
+      padding: 0.5rem 1rem; /* Padding lớn hơn */
+      display: inline-block; 
+      margin-top: 0.5rem; /* Khoảng cách với text phía trên */
+      font-weight: bold;
+      text-decoration: none !important; /* Luôn bỏ gạch chân cho nút này */
+    }
+    #response a.map-navigation-link:hover,
+    #response a.map-navigation-link:focus {
+      background-color: #005fcc; /* Màu nền đậm hơn khi hover */
+      color: white;
+    }
+     #response small { /* Style cho chú thích nhỏ */
+        display: block;
+        margin-top: 0.75rem;
+        font-size: 0.85em;
+        color: #6c757d;
+    }
+
+
+    @media (max-width: 768px) {
+      .container {
+        flex-direction: column; 
+        max-width: 450px; 
+        align-items: stretch; 
+      }
+      .input-column, .output-column {
+        flex-basis: auto; 
+        width: 100%;
+      }
+      .output-column {
+         margin-top: 1.5rem; 
+      }
+      button {
+         width: auto; 
+         align-self: center; 
+      }
+    }
+    @media (max-width: 480px) {
+        body { padding: 1rem; }
+        .container { padding: 1.5rem; }
+        h2 { font-size: 1.3rem; }
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h2>🌤️ AI Tra Cứu Thời Tiết</h2>
-    <input type="text" id="questionInput" placeholder="Hỏi thời tiết (ví dụ: Hà Nội) ...">
-    <button onclick="askWeather()">Xem thời tiết</button>
-    <p id="response"></p>
+    <div class="input-column">
+      <h2>🌤️ AI Tra Cứu Thời Tiết & Du Lịch & Địa Điểm</h2>
+      <input type="text" id="questionInput" placeholder="Hỏi thời tiết, địa điểm, chỉ đường...">
+      <button onclick="askWithLocation()">Tra cứu</button>
+    </div>
+    
+    <div class="output-column">
+      <div id="response"></div>
+    </div>
   </div>
 
   <script>
     const questionInputElement = document.getElementById("questionInput");
     const responseElement = document.getElementById("response");
-    const submitButton = document.querySelector("button");
+    const submitButton = document.querySelector(".input-column button");
 
-    async function askWeather() {
-      const question = questionInputElement.value.trim();
+    // Hàm mới để lấy vị trí và gọi API
+    async function askWithLocation() {
+        const question = questionInputElement.value.trim();
+        if (!question) {
+            responseElement.innerHTML = "Vui lòng nhập câu hỏi của bạn.";
+            responseElement.classList.add('error', 'visible');
+            return;
+        }
 
-      if (!question) {
-        responseElement.innerText = "Vui lòng nhập tên thành phố hoặc câu hỏi về thời tiết.";
-        return;
-      }
+        // Hiển thị loading ngay
+        responseElement.innerHTML = "Đang xử lý yêu cầu...";
+        responseElement.classList.remove('error'); // Xóa lỗi cũ nếu có
+        responseElement.classList.add('loading', 'visible');
+        submitButton.disabled = true;
+        questionInputElement.disabled = true;
 
-      // Trạng thái chờ
-      responseElement.innerText = "Đang tìm kiếm thông tin...";
-      submitButton.disabled = true;
-      questionInputElement.disabled = true;
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    // Thành công: gọi callApiWithQuestion với tọa độ
+                    callApiWithQuestion(question, position.coords.latitude, position.coords.longitude);
+                },
+                (error) => {
+                    // Lỗi hoặc từ chối: gọi callApiWithQuestion không có tọa độ
+                    console.warn(`Lỗi khi lấy vị trí: ${error.message}. Tiếp tục không có vị trí.`);
+                    responseElement.innerHTML = "Đang xử lý yêu cầu... (Không có vị trí)"; // Cập nhật thông báo
+                    callApiWithQuestion(question, null, null);
+                },
+                { timeout: 7000, enableHighAccuracy: false } // Thêm timeout và tùy chọn độ chính xác
+            );
+        } else {
+            // Trình duyệt không hỗ trợ Geolocation
+            console.warn("Trình duyệt không hỗ trợ Geolocation. Tiếp tục không có vị trí.");
+            responseElement.innerHTML = "Đang xử lý yêu cầu... (Không có vị trí)";
+            callApiWithQuestion(question, null, null);
+        }
+    }
+
+    async function callApiWithQuestion(question, lat, lon) {
+      // responseElement đã ở trạng thái loading từ askWithLocation
 
       try {
-        const encodedQuestion = encodeURIComponent(question);
-        const res = await fetch(`http://localhost:8000/ask?question=${encodedQuestion}`);
-        
-        // Không cần kiểm tra res.ok ở đây vì backend sẽ luôn trả về JSON
-        // (trừ trường hợp server FastAPI bị sập hoàn toàn hoặc lỗi CORS nghiêm trọng)
+        let apiUrl = `http://localhost:8000/ask?question=${encodeURIComponent(question)}`;
+        if (lat !== null && lon !== null) {
+          apiUrl += `&latitude=${lat}&longitude=${lon}`;
+        }
+        // console.log("Calling API URL:", apiUrl); // Debug URL
+
+        const res = await fetch(apiUrl);
         const data = await res.json();
 
+        responseElement.classList.remove('loading');
+
         if (data && data.message) {
-            responseElement.innerText = data.message;
+            // Backend có thể trả về HTML (cho danh sách địa điểm, chỉ đường) hoặc text thuần
+            // innerHTML sẽ render HTML, và hiển thị text thuần như bình thường
+            // Nếu text thuần có \n và muốn thành <br>, cần xử lý riêng
+            const isHtmlResponse = data.message.includes("<a href") || data.message.includes("<ul>");
+            if (isHtmlResponse) {
+                 responseElement.innerHTML = data.message;
+            } else {
+                 responseElement.innerHTML = data.message.replace(/\n/g, '<br>');
+            }
+            
+            const messageLowerCase = data.message.toLowerCase();
+            const isErrorIndicating = (messageLowerCase.includes("lỗi") || 
+                messageLowerCase.includes("không tìm thấy") ||
+                messageLowerCase.includes("không thể") ||
+                messageLowerCase.includes("xin lỗi, tôi") ||
+                messageLowerCase.includes("gặp sự cố"));
+            // Không đánh dấu lỗi nếu là thông báo tìm địa điểm thành công hoặc gợi ý
+            const isSuccessPlaceMessage = messageLowerCase.includes("dưới đây là một số gợi ý") || messageLowerCase.includes("chỉ đường đến") || messageLowerCase.includes("tìm") && messageLowerCase.includes("trên bản đồ");
+
+            if (isErrorIndicating && !isSuccessPlaceMessage) {
+                responseElement.classList.add('error');
+            } else if (!res.ok && !isSuccessPlaceMessage) {
+                 responseElement.classList.add('error');
+            }
+            else {
+                responseElement.classList.remove('error');
+            }
         } else {
-            // Trường hợp backend trả về cấu trúc không mong đợi
-            responseElement.innerText = "Đã có lỗi xảy ra. Phản hồi không hợp lệ từ máy chủ.";
+            responseElement.innerHTML = "Đã có lỗi xảy ra. Phản hồi không hợp lệ từ máy chủ.";
+            responseElement.classList.add('error');
         }
 
       } catch (error) {
         console.error("Lỗi khi gọi API:", error);
-        responseElement.innerText = "Không thể kết nối đến máy chủ hoặc đã có lỗi xảy ra. Vui lòng thử lại.";
+        responseElement.classList.remove('loading');
+        responseElement.innerHTML = "Không thể kết nối đến máy chủ hoặc đã có lỗi xảy ra. Vui lòng thử lại.";
+        responseElement.classList.add('error');
       } finally {
-        // Khôi phục trạng thái
         submitButton.disabled = false;
         questionInputElement.disabled = false;
+        if (responseElement.innerHTML.trim() !== "") {
+             if (!responseElement.classList.contains('visible')) {
+                responseElement.classList.add('visible');
+            }
+        } else {
+            responseElement.classList.remove('visible'); 
+        }
       }
     }
+
+    // Cập nhật sự kiện click của nút để gọi askWithLocation
+    // document.querySelector(".input-column button").onclick = askWithLocation; // Gán trực tiếp
+    // Hoặc giữ nguyên onclick="askWithLocation()" trong HTML
 
     // Cho phép nhấn Enter để gửi
     questionInputElement.addEventListener("keypress", function(event) {
         if (event.key === "Enter") {
-            event.preventDefault(); // Ngăn hành vi mặc định của Enter (nếu có form)
-            askWeather();
+            event.preventDefault(); 
+            askWithLocation(); // Gọi hàm mới khi nhấn Enter
         }
     });
   </script>
